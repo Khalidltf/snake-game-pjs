@@ -53,16 +53,54 @@ let currentSnake = [
 
 let moveRight = ([t, l]) => [t, l+1]
 let moveLeft = ([t, l]) => [t, l-1]
-let moveTop = ([t, l]) => [t-1, l]
-let moveBottom = ([t, l]) => [t+1, l]
+let moveUp = ([t, l]) => [t-1, l]
+let moveDown = ([t, l]) => [t+1, l]
 
 let currentDirection = moveRight;
+let flushedDirection = currentDirection
 // console.log(currentDirection);
+
+window.addEventListener('keydown', (e) => {
+
+  switch (e.key) {
+    case 'ArrowLeft':
+    case 'A':
+    case 'a':
+      if (flushedDirection !== moveRight) {
+        currentDirection = moveLeft
+      }
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      if (flushedDirection !== moveLeft) {
+        currentDirection = moveRight
+      }
+      break;
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      if (flushedDirection !== moveDown) {
+        currentDirection = moveUp
+      }
+      break;
+    case 'ArrowDown':
+      case 'S':
+      case 's':
+      if (flushedDirection !== moveUp) {
+        currentDirection = moveDown
+      }
+      break;
+    // default:
+    //   break;
+  }
+})
 
 const step = () => {
   currentSnake.shift()
   let head = currentSnake[currentSnake.length - 1]
   let nextHead = currentDirection(head)
+  flushedDirection = currentDirection;
   currentSnake.push(nextHead)
   drawSnake(currentSnake)
 }
@@ -70,4 +108,4 @@ const step = () => {
 drawSnake(currentSnake)
 // setInterval(() => {
 //   step()
-// }, 1000);
+// }, 100);
