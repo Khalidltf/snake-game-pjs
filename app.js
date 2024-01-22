@@ -33,7 +33,7 @@ function drawSnake(snake) {
     let position = top + "_" + left;
     snakePositions.add(position);
   }
-  console.log(snakePositions);
+  // console.log(snakePositions);
   for (let i = 0; i < ROWS; i++) {
     for (let j = 0; j < COLS; j++) {
       let position = i + "_" + j;
@@ -51,61 +51,85 @@ let currentSnake = [
   [0, 5],
 ];
 
-let moveRight = ([t, l]) => [t, l+1]
-let moveLeft = ([t, l]) => [t, l-1]
-let moveUp = ([t, l]) => [t-1, l]
-let moveDown = ([t, l]) => [t+1, l]
+let moveRight = ([t, l]) => [t, l + 1];
+let moveLeft = ([t, l]) => [t, l - 1];
+let moveUp = ([t, l]) => [t - 1, l];
+let moveDown = ([t, l]) => [t + 1, l];
 
 let currentDirection = moveRight;
-let flushedDirection = currentDirection
+let directionQueue = [];
+
+/* let currentDirection = moveRight;
+ let flushedDirection = currentDirection */
 // console.log(currentDirection);
 
-window.addEventListener('keydown', (e) => {
-
+window.addEventListener("keydown", (e) => {
   switch (e.key) {
-    case 'ArrowLeft':
-    case 'A':
-    case 'a':
-      if (flushedDirection !== moveRight) {
-        currentDirection = moveLeft
-      }
+    case "ArrowLeft":
+    case "A":
+    case "a":
+      directionQueue.push(moveLeft);
       break;
-    case 'ArrowRight':
-    case 'd':
-    case 'D':
-      if (flushedDirection !== moveLeft) {
-        currentDirection = moveRight
-      }
+    case "ArrowRight":
+    case "d":
+    case "D":
+      directionQueue.push(moveRight);
       break;
-    case 'ArrowUp':
-    case 'w':
-    case 'W':
-      if (flushedDirection !== moveDown) {
-        currentDirection = moveUp
-      }
+    case "ArrowUp":
+    case "w":
+    case "W":
+      directionQueue.push(moveUp);
       break;
-    case 'ArrowDown':
-      case 'S':
-      case 's':
-      if (flushedDirection !== moveUp) {
-        currentDirection = moveDown
-      }
+    case "ArrowDown":
+    case "S":
+    case "s":
+      directionQueue.push(moveDown);
       break;
-    // default:
-    //   break;
   }
-})
+});
+
+// console.log(directionQueue);
 
 const step = () => {
-  currentSnake.shift()
-  let head = currentSnake[currentSnake.length - 1]
-  let nextHead = currentDirection(head)
-  flushedDirection = currentDirection;
-  currentSnake.push(nextHead)
-  drawSnake(currentSnake)
-}
+  currentSnake.shift();
+  let head = currentSnake[currentSnake.length - 1];
 
-drawSnake(currentSnake)
+  let nextDirection = currentDirection;
+  while (directionQueue.length > 0) {
+    let candidateDirection = directionQueue.shift();
+    if (areOpposite(candidateDirection, currentDirection)) {
+      continue;
+    }
+    nextDirection = candidateDirection;
+    break;
+  }
+  currentDirection = nextDirection;
+  let nextHead = currentDirection(head);
+  currentSnake.push(nextHead);
+  drawSnake(currentSnake);
+};
+
+const areOpposite = (dir1, dir2) => {
+  if (dir1 === moveLeft && dir2 === moveRight) {
+    return true;
+  }
+  if (dir1 === moveRight && dir2 === moveLeft) {
+    return true;
+  }
+  if (dir1 === moveUp && dir2 === moveDown) {
+    return true;
+  }
+  if (dir1 === moveDown && dir2 === moveUp) {
+    return true;
+  }
+  return false;
+};
+
+drawSnake(currentSnake);
 // setInterval(() => {
 //   step()
 // }, 100);
+
+function dump(obj) {
+  document.getElementById("debug").innerText = JSON.stringify(obj);
+}
