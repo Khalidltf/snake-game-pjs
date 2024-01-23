@@ -17,21 +17,28 @@ function initializeCanvas() {
       pixel.style.top = i * PIXEL + "px";
       pixel.style.width = PIXEL + "px";
       pixel.style.height = PIXEL + "px";
-      let position = i + "_" + j;
+      let key = toKey([i, j]);
       CANVAS.appendChild(pixel);
-      pixels.set(position, pixel);
+      pixels.set(key, pixel);
     }
   }
 }
 
 initializeCanvas();
 
-function drawSnake() {
+function drawCanvas() {
+  let foodKey = toKey(currentFood)
   for (let i = 0; i < ROWS; i++) {
     for (let j = 0; j < COLS; j++) {
-      let position = i + "_" + j;
-      let pixel = pixels.get(position);
-      pixel.style.background = currentSnakePositions.has(position) ? "black" : "white";
+      let key = toKey([i, j]);
+      let pixel = pixels.get(key);
+      let background = 'white'
+      if(key === foodKey) {
+        background = 'purple'
+      } else if (currentSnakeKeys.has(key)) {
+        background = 'black'
+      }
+      pixel.style.background = background
     }
   }
 }
@@ -44,11 +51,14 @@ let currentSnake = [
   [0, 5],
 ];
 
-let currentSnakePositions = toPositionSet(currentSnake)
+let currentSnakeKeys = toKeySet(currentSnake);
+
+// we define a coordinate food
+let currentFood = [15, 10]
 
 /* const updateSnake = (nextSnake) => {
   currentSnake = nextSnake
-  currentSnakePositions = toPositionSet(nextSnake);
+  currentSnakeKeys = toKeySet(nextSnake);
 } */
 
 
@@ -90,9 +100,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 const step = () => {
-  currentSnake.shift();
   let head = currentSnake[currentSnake.length - 1];
-
   let nextDirection = currentDirection;
   while (directionQueue.length > 0) {
     let candidateDirection = directionQueue.shift();
@@ -107,15 +115,28 @@ const step = () => {
   // we check if the next head is a valid position
   // we continue if it's not we stop the game
   // we'll define a checkValidHead n stopGame functions below
-  if (!checkValidHead(currentSnakePositions, nextHead)) {
+  if (!checkValidHead(currentSnakeKeys, nextHead)) {
     stopGame();
     return;
   }
 
   currentSnake.push(nextHead);
-  currentSnakePositions = toPositionSet(currentSnake);
-  drawSnake();
+  if (toKey(nextHead) == toKey(currentFood)) {
+    moveFood()
+  } else {
+    currentSnake.shift();
+  }
+
+  currentSnakeKeys = toKeySet(currentSnake);
+  drawCanvas();
 };
+
+function moveFood() {
+  let nextTop = Math.floor(Math.random() * ROWS)
+  let nextLeft = Math.floor(Math.random() * COLS)
+  currentFood = [nextTop, nextLeft]
+}
+
 
 const areOpposite = (dir1, dir2) => {
   if (dir1 === moveLeft && dir2 === moveRight) {
@@ -133,7 +154,8 @@ const areOpposite = (dir1, dir2) => {
   return false;
 };
 
-const checkValidHead = (positions, [top, left]) => {
+const checkValidHead = (keys, cell) => {
+  let [top, left] = cell
   /* if top or left position is less than 0 (outside the grid) it's not valid */
   if (top < 0 || left < 0 ) {
     return false
@@ -143,8 +165,7 @@ const checkValidHead = (positions, [top, left]) => {
     return false
   }
   // we draw the current position
-  let position = top + '_' + left
-  if (positions.has(position)) {
+  if (keys.has(toKey(cell))) {
     return false;
   }
   /*if top and left are within the grid, it's valid head's position */
@@ -157,15 +178,19 @@ function stopGame() {
   clearInterval(gameInterval);
 }
 
-drawSnake();
-// let gameInterval = setInterval(() => {
-//   step()
-// }, 100);
+drawCanvas();
+let gameInterval = setInterval(() => {
+  step()
+}, 100);
 
-function toPositionSet(snake) {
+function toKey([top, left]) {
+  return top + "_" + left;
+}
+
+function toKeySet(snake) {
   let set = new Set();
-  for (let [top, left] of snake) {
-    let position = top + "_" + left;
+  for (let cell of snake) {
+    let position = toKey(cell);
     set.add(position);
   }
   return set;
