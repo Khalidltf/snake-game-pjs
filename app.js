@@ -3,7 +3,10 @@ let CANVAS = document.getElementById("canvas");
 let ROWS = 30;
 let COLS = 50;
 let PIXEL = 10;
-
+let moveRight = ([t, l]) => [t, l + 1];
+let moveLeft = ([t, l]) => [t, l - 1];
+let moveUp = ([t, l]) => [t - 1, l];
+let moveDown = ([t, l]) => [t + 1, l];
 let pixels = new Map();
 
 //  drawing the canvas
@@ -27,48 +30,33 @@ function initializeCanvas() {
 initializeCanvas();
 
 function drawCanvas() {
-  let foodKey = toKey(currentFood)
+  let foodKey = toKey(currentFood);
   for (let i = 0; i < ROWS; i++) {
     for (let j = 0; j < COLS; j++) {
       let key = toKey([i, j]);
       let pixel = pixels.get(key);
-      let background = 'white'
-      if(key === foodKey) {
-        background = 'purple'
+      let background = "white";
+      if (key === foodKey) {
+        background = "purple";
       } else if (currentSnakeKeys.has(key)) {
-        background = 'black'
+        background = "black";
       }
-      pixel.style.background = background
+      pixel.style.background = background;
     }
   }
 }
 
-let currentSnake = [
-  [0, 1],
-  [0, 2],
-  [0, 3],
-  [0, 4],
-  [0, 5],
-];
-
-let currentSnakeKeys = toKeySet(currentSnake);
-
+let currentSnake
+let currentSnakeKeys
 // we define a coordinate food
-let currentFood = [15, 10]
+let currentFood
+let currentDirection
+let directionQueue
 
 /* const updateSnake = (nextSnake) => {
   currentSnake = nextSnake
   currentSnakeKeys = toKeySet(nextSnake);
 } */
-
-
-let moveRight = ([t, l]) => [t, l + 1];
-let moveLeft = ([t, l]) => [t, l - 1];
-let moveUp = ([t, l]) => [t - 1, l];
-let moveDown = ([t, l]) => [t + 1, l];
-
-let currentDirection = moveRight;
-let directionQueue = [];
 
 /* let currentDirection = moveRight;
  let flushedDirection = currentDirection */
@@ -96,6 +84,11 @@ window.addEventListener("keydown", (e) => {
     case "s":
       directionQueue.push(moveDown);
       break;
+    case "r":
+    case "R":
+      stopGame()
+      startGame()
+    break;
   }
 });
 
@@ -122,7 +115,7 @@ const step = () => {
 
   currentSnake.push(nextHead);
   if (toKey(nextHead) == toKey(currentFood)) {
-    moveFood()
+    currentFood = spawnFood();
   } else {
     currentSnake.shift();
   }
@@ -131,12 +124,11 @@ const step = () => {
   drawCanvas();
 };
 
-function moveFood() {
-  let nextTop = Math.floor(Math.random() * ROWS)
-  let nextLeft = Math.floor(Math.random() * COLS)
-  currentFood = [nextTop, nextLeft]
+function spawnFood() {
+  let nextTop = Math.floor(Math.random() * ROWS);
+  let nextLeft = Math.floor(Math.random() * COLS);
+  return [nextTop, nextLeft];
 }
-
 
 const areOpposite = (dir1, dir2) => {
   if (dir1 === moveLeft && dir2 === moveRight) {
@@ -155,21 +147,21 @@ const areOpposite = (dir1, dir2) => {
 };
 
 const checkValidHead = (keys, cell) => {
-  let [top, left] = cell
+  let [top, left] = cell;
   /* if top or left position is less than 0 (outside the grid) it's not valid */
-  if (top < 0 || left < 0 ) {
-    return false
+  if (top < 0 || left < 0) {
+    return false;
   }
   /* if top or left position is greater than the number of rows or columns, it isn't valid */
   if (top >= ROWS || left >= COLS) {
-    return false
+    return false;
   }
   // we draw the current position
   if (keys.has(toKey(cell))) {
     return false;
   }
   /*if top and left are within the grid, it's valid head's position */
-  return true
+  return true;
 };
 
 function stopGame() {
@@ -178,10 +170,28 @@ function stopGame() {
   clearInterval(gameInterval);
 }
 
-drawCanvas();
-let gameInterval = setInterval(() => {
-  step()
-}, 100);
+function startGame() {
+  directionQueue = [];
+  currentDirection = moveRight;
+  currentSnake = makeInitialSnake();
+  currentSnakeKeys = toKeySet(currentSnake);
+  currentFood = spawnFood();
+  CANVAS.style.border = ''
+  gameInterval = setInterval(step, 50);
+  drawCanvas();
+}
+
+startGame()
+
+function makeInitialSnake() {
+  return [
+    [0, 1],
+    [0, 2],
+    [0, 3],
+    [0, 4],
+    [0, 5],
+  ];
+}
 
 function toKey([top, left]) {
   return top + "_" + left;
@@ -195,7 +205,6 @@ function toKeySet(snake) {
   }
   return set;
 }
-
 
 function dump(obj) {
   document.getElementById("debug").innerText = JSON.stringify(obj);
