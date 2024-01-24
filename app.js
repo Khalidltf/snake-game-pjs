@@ -44,13 +44,6 @@ function drawCanvas() {
       pixel.style.background = background;
     }
   }
-
-  dump({
-    currentSnake,
-    snakeKeys: Array.from(currentSnakeKeys),
-    vacantKeys: Array.from(currentVacantKeys),
-    foodKey: currentFoodKey
-  })
 }
 
 let currentSnake;
@@ -225,7 +218,7 @@ function startGame() {
   currentFoodKey = spawnFood();
 
   CANVAS.style.border = "";
-  // gameInterval = setInterval(step, 50);
+  gameInterval = setInterval(step, 50);
   drawCanvas();
 }
 
