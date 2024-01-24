@@ -48,6 +48,7 @@ function drawCanvas() {
 
 let currentSnake
 let currentSnakeKeys
+let currentVacantKeys
 // we define a coordinate food
 let currentFood
 let currentDirection
@@ -125,9 +126,14 @@ const step = () => {
 };
 
 function spawnFood() {
-  let nextTop = Math.floor(Math.random() * ROWS);
-  let nextLeft = Math.floor(Math.random() * COLS);
-  return [nextTop, nextLeft];
+      while (true) { let nextTop = Math.floor(Math.random() * ROWS);
+      let nextLeft = Math.floor(Math.random() * COLS);
+      let key = toKey([nextTop, nextLeft])
+      if (currentSnakeKeys.has(key)) {
+        continue;
+      }
+    return [nextTop, nextLeft];
+  }
 }
 
 const areOpposite = (dir1, dir2) => {
