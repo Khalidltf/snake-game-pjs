@@ -77,7 +77,7 @@ const step = () => {
     return;
   }
 
-  pushHead(nextHead)
+  pushHead(nextHead);
   if (toKey(nextHead) == currentFoodKey) {
     let nextFoodKey = spawnFood();
     if (nextFoodKey === null) {
@@ -86,23 +86,26 @@ const step = () => {
     }
     currentFoodKey = nextFoodKey;
   } else {
-    popTail()
+    popTail();
   }
   drawCanvas();
+  if (window.location.search === "?debug") {
+    checkIntegrity_SLOW();
+  }
 };
 
 function pushHead(nextHead) {
   currentSnake.push(nextHead);
-  let key = toKey(nextHead)
-  currentVacantKeys.delete(key)
-  currentSnakeKeys.add(key)
+  let key = toKey(nextHead);
+  currentVacantKeys.delete(key);
+  currentSnakeKeys.add(key);
 }
 
 function popTail() {
-  let tail = currentSnake.shift()
-  let key = toKey(tail)
-  currentVacantKeys.add(key)
-  currentSnakeKeys.delete(key)
+  let tail = currentSnake.shift();
+  let key = toKey(tail);
+  currentVacantKeys.add(key);
+  currentSnakeKeys.delete(key);
 }
 
 function spawnFood() {
@@ -153,9 +156,6 @@ window.addEventListener("keydown", (e) => {
       stopGame(false);
       startGame();
       break;
-    case " ":
-      step();
-      break;
   }
 });
 
@@ -183,6 +183,9 @@ function startGame() {
     currentSnakeKeys.add(key);
   }
   currentFoodKey = spawnFood();
+  [snakeKeys, vacantKeys] = partitionCells(currentSnake);
+  currentSnakeKeys = snakeKeys;
+  currentVacantKeys = vacantKeys;
 
   CANVAS.style.border = "";
   gameInterval = setInterval(step, 50);
@@ -207,7 +210,26 @@ const areOpposite = (dir1, dir2) => {
     return true;
   }
   return false;
+  k;
 };
+
+function partitionCells(snake) {
+  snakeKeys = new Set();
+  vacantKeys = new Set();
+  for (let i = 0; i < ROWS; i++) {
+    for (let j = 0; j < COLS; j++) {
+      vacantKeys.add(toKey([i, j]));
+    }
+  }
+
+  for (let cell of snake) {
+    let key = toKey(cell);
+    vacantKeys.delete(key);
+    snakeKeys.add(key);
+  }
+
+  return [snakeKeys, vacantKeys];
+}
 
 const checkValidHead = (keys, cell) => {
   let [top, left] = cell;
@@ -246,3 +268,69 @@ function toKey([top, left]) {
     document.getElementById("debug").innerText =     JSON.stringify(obj, null, 2);
   }
 */
+
+// checking integrity
+
+function areSameSets_SLOW(a, b) {
+  return JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+}
+
+function checkIntegrity_SLOW() {
+  let failedCheck = null;
+  let foodCount = 0;
+  let allKeys = new Set();
+  for (let i = 0; i < ROWS; i++) {
+    for (let j = 0; j < COLS; j++) {
+      let key = toKey([i, j]);
+      allKeys.add(key);
+      if (key === currentFoodKey) {
+        foodCount++;
+      }
+    }
+  }
+
+  if (foodCount !== 1) {
+    failedCheck = "there connot be 2 food";
+  }
+
+  [snakeKeys, vacantKeys] = partitionCells(currentSnake);
+  if (!areSameSets_SLOW(snakeKeys, currentSnakeKeys)) {
+    failedCheck = "  snake keys don't match";
+  }
+  if (!areSameSets_SLOW(vacantKeys, currentVacantKeys)) {
+    failedCheck = "  vacant keys don't match";
+  }
+
+  if (currentSnakeKeys.has(currentFoodKey)) {
+    failedCheck = "there's food in the snake";
+  }
+  if (currentSnake.length !== currentSnakeKeys.size) {
+    failedCheck = "the snake intersects itself";
+  }
+  if (
+    !areSameSets_SLOW(
+      new Set([...currentSnakeKeys, ...currentVacantKeys]),
+      allKeys
+    )
+  ) {
+    failedCheck = "something is out of bounds";
+  }
+
+  for (let i = 1; i < currentSnake.length; i++) {
+    let cell = currentSnake[i];
+    let prevCell = currentSnake[i - 1];
+    let dy = cell[0] - prevCell[0];
+    let dx = cell[1] - prevCell[1];
+    let isOK =
+      (dy === 0 && Math.abs(dx) === 1) || (dx === 0 && Math.abs(dy) === 1);
+    if (!isOK) {
+      failedCheck = "the snake has a break";
+    }
+  }
+
+  if (failedCheck !== null) {
+    stopGame(false);
+    CANVAS.style.borderColor = "orange";
+    throw Error(failedCheck);
+  }
+}

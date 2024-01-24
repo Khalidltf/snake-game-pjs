@@ -9,8 +9,3 @@
   position: relative;
   box-sizing: content-box;
 }
-
-#debug {
-  color: red;
-  font-size: 24px;
-}
